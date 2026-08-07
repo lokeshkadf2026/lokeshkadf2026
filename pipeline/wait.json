@@ -1,0 +1,17 @@
+{
+	"name": "wait",
+	"properties": {
+		"activities": [
+			{
+				"name": "wait",
+				"type": "Wait",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"waitTimeInSeconds": 5
+				}
+			}
+		],
+		"annotations": []
+	}
+}
