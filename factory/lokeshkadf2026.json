@@ -1,0 +1,15 @@
+{
+	"name": "lokeshkadf2026",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "6d9f47a9-c0eb-459d-980a-b4bd053ec4aa",
+		"tenantId": "a3bd3c35-1061-4154-9acd-7d78e960460c"
+	}
+}
