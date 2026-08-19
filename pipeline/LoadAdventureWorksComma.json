@@ -1,7 +1,7 @@
 {
-	"name": "LoadAdventureWorksPipe",
+	"name": "LoadAdventureWorksComma",
 	"properties": {
-		"description": "Load data into adventure works database.",
+		"description": "Load data into adventure works database if the csvs are comma delimited.",
 		"activities": [
 			{
 				"name": "getFiles",
@@ -98,7 +98,7 @@
 							},
 							"inputs": [
 								{
-									"referenceName": "getFIleListPipe",
+									"referenceName": "getFileListComma",
 									"type": "DatasetReference",
 									"parameters": {
 										"fileName": {
@@ -118,7 +118,7 @@
 									"type": "DatasetReference",
 									"parameters": {
 										"table": {
-											"value": "@split(item().name,'_')[1]",
+											"value": "@if(equals(length(split(item().name, '_')), 3), split(item().name, '_')[1], split(split(item().name, '_')[1], '.')[0])",
 											"type": "Expression"
 										},
 										"schema": {
@@ -136,7 +136,7 @@
 		"parameters": {
 			"folder": {
 				"type": "string",
-				"defaultValue": "Person/Dynamic"
+				"defaultValue": "HR"
 			}
 		},
 		"annotations": []

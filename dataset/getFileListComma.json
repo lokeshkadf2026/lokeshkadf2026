@@ -1,6 +1,7 @@
 {
-	"name": "getFIleListPipe",
+	"name": "getFileListComma",
 	"properties": {
+		"description": "Comma Delimited File list laod",
 		"linkedServiceName": {
 			"referenceName": "ls_datalake",
 			"type": "LinkedServiceReference"
@@ -28,7 +29,7 @@
 				},
 				"fileSystem": "adventureworks"
 			},
-			"columnDelimiter": "|",
+			"columnDelimiter": ",",
 			"escapeChar": "\\",
 			"firstRowAsHeader": true,
 			"quoteChar": "\""
