@@ -1,15 +1,12 @@
 {
-	"name": "getPersonFilelist",
+	"name": "ds_metadata_advworks",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "ls_datalake",
 			"type": "LinkedServiceReference"
 		},
 		"parameters": {
-			"fileName": {
-				"type": "string"
-			},
-			"folder": {
+			"folderName": {
 				"type": "string"
 			}
 		},
@@ -18,21 +15,21 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"fileName": {
-					"value": "@dataset().fileName",
-					"type": "Expression"
-				},
 				"folderPath": {
-					"value": "@dataset().folder",
+					"value": "@dataset().folderName",
 					"type": "Expression"
 				},
 				"fileSystem": "adventureworks"
 			},
-			"columnDelimiter": "|",
+			"columnDelimiter": ",",
 			"escapeChar": "\\",
-			"firstRowAsHeader": true,
+			"firstRowAsHeader": false,
 			"quoteChar": "\""
 		},
-		"schema": []
+		"schema": [
+			{
+				"type": "String"
+			}
+		]
 	}
 }
