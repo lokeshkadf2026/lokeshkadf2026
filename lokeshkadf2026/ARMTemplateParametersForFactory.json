@@ -5,11 +5,23 @@
 		"factoryName": {
 			"value": "lokeshkadf2026"
 		},
+		"AdvWorksDb_password": {
+			"value": ""
+		},
 		"ls_database_password": {
 			"value": ""
 		},
 		"ls_datalake_accountKey": {
 			"value": ""
+		},
+		"AdvWorksDb_properties_typeProperties_server": {
+			"value": "lokeshkadf2026.database.windows.net"
+		},
+		"AdvWorksDb_properties_typeProperties_database": {
+			"value": "lokeshkanchi-db"
+		},
+		"AdvWorksDb_properties_typeProperties_userName": {
+			"value": "lokeshadmin"
 		},
 		"ls_database_properties_typeProperties_server": {
 			"value": "lokeshkadf2026.database.windows.net"
