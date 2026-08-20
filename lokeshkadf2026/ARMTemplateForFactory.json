@@ -2042,6 +2042,9 @@
 						"type": "string"
 					}
 				},
+				"folder": {
+					"name": "AdventureWorks"
+				},
 				"annotations": [],
 				"type": "AzureSqlTable",
 				"schema": [],
@@ -2136,6 +2139,9 @@
 					"p_file": {
 						"type": "string"
 					}
+				},
+				"folder": {
+					"name": "AdventureWorks"
 				},
 				"annotations": [],
 				"type": "DelimitedText",
@@ -2292,6 +2298,9 @@
 						"type": "string"
 					}
 				},
+				"folder": {
+					"name": "AdventureWorks"
+				},
 				"annotations": [],
 				"type": "Json",
 				"typeProperties": {
@@ -2330,6 +2339,9 @@
 					"folderName": {
 						"type": "string"
 					}
+				},
+				"folder": {
+					"name": "AdventureWorks"
 				},
 				"annotations": [],
 				"type": "DelimitedText",
@@ -2417,6 +2429,9 @@
 						"type": "string"
 					}
 				},
+				"folder": {
+					"name": "AdventureWorks"
+				},
 				"annotations": [],
 				"type": "DelimitedText",
 				"typeProperties": {
@@ -2460,6 +2475,9 @@
 					"folder": {
 						"type": "string"
 					}
+				},
+				"folder": {
+					"name": "AdventureWorks"
 				},
 				"annotations": [],
 				"type": "DelimitedText",
