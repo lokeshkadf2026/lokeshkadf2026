@@ -71,7 +71,10 @@
 							"typeProperties": {
 								"source": {
 									"type": "AzureSqlSource",
-									"sqlReaderQuery": "@concat('SELECT * FROM [', item().SchemaName, '].[', item().TableName, ']')",
+									"sqlReaderQuery": {
+										"value": "@concat('SELECT * FROM [', item().SchemaName, '].[', item().TableName, ']')",
+										"type": "Expression"
+									},
 									"queryTimeout": "02:00:00",
 									"partitionOption": "None"
 								},
@@ -133,6 +136,9 @@
 				"type": "string",
 				"defaultValue": "Person"
 			}
+		},
+		"folder": {
+			"name": "AdventureWorks"
 		},
 		"annotations": []
 	}

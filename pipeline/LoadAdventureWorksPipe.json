@@ -139,6 +139,9 @@
 				"defaultValue": "Person/Dynamic"
 			}
 		},
+		"folder": {
+			"name": "AdventureWorks"
+		},
 		"annotations": []
 	}
 }

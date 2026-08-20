@@ -258,6 +258,9 @@
 				"type": "string"
 			}
 		},
+		"folder": {
+			"name": "Test"
+		},
 		"annotations": [],
 		"lastPublishTime": "2026-08-06T07:59:04Z"
 	},
