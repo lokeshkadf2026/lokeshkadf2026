@@ -1,9 +1,12 @@
 {
-	"name": "SqlServerTable1",
+	"name": "SqlServerTable",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "lnk_onpremsql",
 			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "AdventureWorks"
 		},
 		"annotations": [],
 		"type": "SqlServerTable",

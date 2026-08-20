@@ -24,13 +24,16 @@
 						"partitionOption": "None"
 					},
 					"dataset": {
-						"referenceName": "SqlServerTable1",
+						"referenceName": "SqlServerTable",
 						"type": "DatasetReference"
 					},
 					"firstRowOnly": false
 				}
 			}
 		],
+		"folder": {
+			"name": "AdventureWorks"
+		},
 		"annotations": []
 	}
 }
