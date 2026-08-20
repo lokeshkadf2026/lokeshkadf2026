@@ -10,6 +10,9 @@
 				"type": "string"
 			}
 		},
+		"folder": {
+			"name": "AdventureWorks"
+		},
 		"annotations": [],
 		"type": "DelimitedText",
 		"typeProperties": {

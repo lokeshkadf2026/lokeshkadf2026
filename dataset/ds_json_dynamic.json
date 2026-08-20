@@ -16,6 +16,9 @@
 				"type": "string"
 			}
 		},
+		"folder": {
+			"name": "AdventureWorks"
+		},
 		"annotations": [],
 		"type": "Json",
 		"typeProperties": {
