@@ -1,0 +1,21 @@
+{
+	"name": "lnk_onpremsql",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "SqlServer",
+		"typeProperties": {
+			"server": "DESKTOP-678D62G\\SQLEXPRESS",
+			"database": "AdventureWorksDW2025",
+			"encrypt": "mandatory",
+			"trustServerCertificate": true,
+			"authenticationType": "SQL",
+			"userName": "lokeshadmin",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiI3MTdiZTk1Ny1hOTc2LTRlMzItYTMyNi00Y2EwZThkNjFjZTIiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "IR-SelfHosted",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
