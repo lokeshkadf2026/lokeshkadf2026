@@ -103,6 +103,9 @@
 				"policy": {
 					"elapsedTimeMetric": {}
 				},
+				"folder": {
+					"name": "Test"
+				},
 				"annotations": []
 			},
 			"dependsOn": [
@@ -379,6 +382,9 @@
 						"type": "string"
 					}
 				},
+				"folder": {
+					"name": "Test"
+				},
 				"annotations": [],
 				"lastPublishTime": "2026-08-06T07:59:04Z"
 			},
@@ -536,6 +542,9 @@
 						"defaultValue": "HR"
 					}
 				},
+				"folder": {
+					"name": "AdventureWorks"
+				},
 				"annotations": []
 			},
 			"dependsOn": [
@@ -690,6 +699,9 @@
 						"defaultValue": "Person/Dynamic"
 					}
 				},
+				"folder": {
+					"name": "AdventureWorks"
+				},
 				"annotations": []
 			},
 			"dependsOn": [
@@ -780,6 +792,9 @@
 				],
 				"policy": {
 					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "Test"
 				},
 				"annotations": [],
 				"lastPublishTime": "2026-08-06T10:20:22Z"
@@ -913,7 +928,7 @@
 												"p_container": "adventureworks",
 												"p_folder": "Sink",
 												"p_file": {
-													"value": "@item().TableName",
+													"value": "@concat(item().TableName, '.csv')",
 													"type": "Expression"
 												}
 											}
@@ -933,11 +948,158 @@
 						"defaultValue": "Person"
 					}
 				},
+				"folder": {
+					"name": "AdventureWorks"
+				},
 				"annotations": []
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/adventureWorksDatabase')]",
 				"[concat(variables('factoryId'), '/datasets/ds_csv_dynamic')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SQLtoJson')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Convert SQL table data into Json",
+				"activities": [
+					{
+						"name": "getSchemaTables",
+						"description": "Find all the tables ",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": "SELECT \n    s.name AS SchemaName,\n    t.name AS TableName\nFROM sys.tables t\nINNER JOIN sys.schemas s ON t.schema_id = s.schema_id\nWHERE s.name = 'Person' \n  AND t.is_ms_shipped = 0;",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "adventureWorksDatabase",
+								"type": "DatasetReference",
+								"parameters": {
+									"table": "dummy",
+									"schema": {
+										"value": "@pipeline().parameters.schema",
+										"type": "Expression"
+									}
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "eachTable",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "getSchemaTables",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('getSchemaTables').output.value",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "copyTableData",
+									"description": "Copy data in the table to a Json",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "@concat('SELECT * FROM [', item().SchemaName, '].[', item().TableName, ']')",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"sink": {
+											"type": "JsonSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "JsonWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "adventureWorksDatabase",
+											"type": "DatasetReference",
+											"parameters": {
+												"table": {
+													"value": "@item().TableName",
+													"type": "Expression"
+												},
+												"schema": "@item().SchemaName"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_json_dynamic",
+											"type": "DatasetReference",
+											"parameters": {
+												"p_container": "adventureworks",
+												"p_folder": "Sink",
+												"p_file": {
+													"value": "@concat(item().TableName, '.json')",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"schema": {
+						"type": "string",
+						"defaultValue": "Person"
+					}
+				},
+				"folder": {
+					"name": "AdventureWorks"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/adventureWorksDatabase')]",
+				"[concat(variables('factoryId'), '/datasets/ds_json_dynamic')]"
 			]
 		},
 		{
@@ -969,6 +1131,9 @@
 				],
 				"policy": {
 					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "Test"
 				},
 				"annotations": [],
 				"lastPublishTime": "2026-08-06T08:01:39Z"
@@ -1289,6 +1454,9 @@
 				],
 				"policy": {
 					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "Test"
 				},
 				"annotations": [],
 				"lastPublishTime": "2026-08-06T11:23:17Z"
@@ -1820,6 +1988,9 @@
 						}
 					}
 				},
+				"folder": {
+					"name": "Test"
+				},
 				"annotations": [],
 				"lastPublishTime": "2026-08-07T06:24:14Z"
 			},
@@ -1846,6 +2017,9 @@
 				],
 				"policy": {
 					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "Test"
 				},
 				"annotations": []
 			},
@@ -2093,6 +2267,51 @@
 						"type": "String"
 					}
 				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_datalake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_json_dynamic')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_datalake",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"p_container": {
+						"type": "string"
+					},
+					"p_folder": {
+						"type": "string"
+					},
+					"p_file": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().p_file",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().p_folder",
+							"type": "Expression"
+						},
+						"fileSystem": {
+							"value": "@dataset().p_container",
+							"type": "Expression"
+						}
+					}
+				},
+				"schema": {}
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/ls_datalake')]"
