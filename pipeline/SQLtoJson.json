@@ -1,7 +1,7 @@
 {
-	"name": "SQLtoCSV",
+	"name": "SQLtoJson",
 	"properties": {
-		"description": "Convert SQL table data into csv",
+		"description": "Convert SQL table data into Json",
 		"activities": [
 			{
 				"name": "getSchemaTables",
@@ -57,7 +57,7 @@
 					"activities": [
 						{
 							"name": "copyTableData",
-							"description": "Copy data in the table to a CSV",
+							"description": "Copy data in the table to a Json",
 							"type": "Copy",
 							"dependsOn": [],
 							"policy": {
@@ -79,25 +79,15 @@
 									"partitionOption": "None"
 								},
 								"sink": {
-									"type": "DelimitedTextSink",
+									"type": "JsonSink",
 									"storeSettings": {
 										"type": "AzureBlobFSWriteSettings"
 									},
 									"formatSettings": {
-										"type": "DelimitedTextWriteSettings",
-										"quoteAllText": true,
-										"fileExtension": ".txt"
+										"type": "JsonWriteSettings"
 									}
 								},
-								"enableStaging": false,
-								"translator": {
-									"type": "TabularTranslator",
-									"typeConversion": true,
-									"typeConversionSettings": {
-										"allowDataTruncation": true,
-										"treatBooleanAsNumber": false
-									}
-								}
+								"enableStaging": false
 							},
 							"inputs": [
 								{
@@ -114,13 +104,13 @@
 							],
 							"outputs": [
 								{
-									"referenceName": "ds_csv_dynamic",
+									"referenceName": "ds_json_dynamic",
 									"type": "DatasetReference",
 									"parameters": {
 										"p_container": "adventureworks",
 										"p_folder": "Sink",
 										"p_file": {
-											"value": "@concat(item().TableName, '.csv')",
+											"value": "@concat(item().TableName, '.json')",
 											"type": "Expression"
 										}
 									}
