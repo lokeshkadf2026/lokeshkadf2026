@@ -1,36 +1,95 @@
 {
 	"name": "SqltoCSVOnprem",
 	"properties": {
-		"description": "On prem databases  : Using self hosted integration runtime",
+		"description": "On prem databases  : Using self hosted integration runtime. \nParameters are an array of table names that needs to be copied from the database.",
 		"activities": [
 			{
-				"name": "getTables",
-				"description": "",
-				"type": "Lookup",
+				"name": "eachTable",
+				"type": "ForEach",
 				"dependsOn": [],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
 				"userProperties": [],
 				"typeProperties": {
-					"source": {
-						"type": "SqlServerSource",
-						"sqlReaderQuery": "SELECT t.name AS TableName\nFROM sys.tables t\nWHERE t.is_ms_shipped = 0;",
-						"queryTimeout": "02:00:00",
-						"partitionOption": "None"
+					"items": {
+						"value": "@pipeline().parameters.tables",
+						"type": "Expression"
 					},
-					"dataset": {
-						"referenceName": "SqlServerTable",
-						"type": "DatasetReference"
-					},
-					"firstRowOnly": false
+					"activities": [
+						{
+							"name": "copyDataFromOnPrem",
+							"description": "Copy table data to csv from on premises tables.",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlServerSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "SqlServerTable",
+									"type": "DatasetReference",
+									"parameters": {
+										"table": {
+											"value": "@item()",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_csv_dynamic",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_container": "adventureworks",
+										"p_folder": "OnPrem",
+										"p_file": {
+											"value": "@concat(item(),'.csv')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
 				}
 			}
 		],
+		"parameters": {
+			"tables": {
+				"type": "array"
+			}
+		},
 		"folder": {
 			"name": "AdventureWorks"
 		},

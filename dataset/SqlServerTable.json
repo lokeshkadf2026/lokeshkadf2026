@@ -5,11 +5,23 @@
 			"referenceName": "lnk_onpremsql",
 			"type": "LinkedServiceReference"
 		},
+		"parameters": {
+			"table": {
+				"type": "string"
+			}
+		},
 		"folder": {
 			"name": "AdventureWorks"
 		},
 		"annotations": [],
 		"type": "SqlServerTable",
-		"schema": []
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": {
+				"value": "@dataset().table",
+				"type": "Expression"
+			}
+		}
 	}
 }
