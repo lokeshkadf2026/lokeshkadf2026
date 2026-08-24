@@ -1,0 +1,239 @@
+{
+	"name": "LoadandAudit",
+	"properties": {
+		"description": "Load data into adventure works database and log the details.\nPick the files between given certain dates.\nDate Format:  YYYY-MM-DD",
+		"activities": [
+			{
+				"name": "getFiles",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_metadata_advworks",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderName": {
+								"value": "@pipeline().parameters.folder",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "filterDates",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('filterDates').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "loadData",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": true
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "getFIleListPipe",
+									"type": "DatasetReference",
+									"parameters": {
+										"fileName": {
+											"value": "@item().name",
+											"type": "Expression"
+										},
+										"folder": {
+											"value": "@pipeline().parameters.folder",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "adventureWorksDatabase",
+									"type": "DatasetReference",
+									"parameters": {
+										"table": {
+											"value": "@split(split(item().name, '.')[0], '_')[1]",
+											"type": "Expression"
+										},
+										"schema": {
+											"value": "@split(split(item().name, '.')[0], '_')[0]",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "insertAuditData",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "loadData",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT '@{pipeline().DataFactory}' as DataFactory_Name,\n'@{pipeline().Pipeline}' as Pipeline_Name,\n'@{pipeline().RunId}' as RunId,\n'@{concat(pipeline().parameters.folder,item().name)}' as Source,\n'@{split(split(item().name, '.')[0], '_')[1]}' as Destination,\n'@{pipeline().TriggerType}' as TriggerType,\n'@{pipeline().TriggerId}' as TriggerId,\n'@{pipeline().TriggerName}' as TriggerName,\n'@{pipeline().TriggerTime}' as TriggerTime,\n'@{activity('loadData').output.rowsCopied}' as rowsCopied,\n'@{activity('loadData').output.rowsRead}' as RowsRead,\n'@{activity('loadData').output.usedParallelCopies}' as No_ParallelCopies,\n'@{activity('loadData').output.copyDuration}' as copyDuration_in_secs,\n'@{activity('loadData').output.effectiveIntegrationRuntime}' as effectiveIntegrationRuntime,\n'@{activity('loadData').output.executionDetails[0].source.type}' as Source_Type,\n'@{activity('loadData').output.executionDetails[0].sink.type}' as Sink_Type,\n'@{activity('loadData').output.executionDetails[0].status}' as Execution_Status,\n'@{activity('loadData').output.executionDetails[0].start}' as CopyActivity_Start_Time,\n'@{utcNow()}' as CopyActivity_End_Time,\n'@{activity('loadData').output.executionDetails[0].detailedDurations.queuingDuration}' as CopyActivity_queuingDuration_in_secs,\n'@{activity('loadData').output.executionDetails[0].detailedDurations.transferDuration}' as CopyActivity_transferDuration_in_secs\n",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "adventureWorksDatabase",
+									"type": "DatasetReference",
+									"parameters": {
+										"table": "pipeline_log",
+										"schema": "dbo"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_SQLDB_PIPELINE_LOG",
+									"type": "DatasetReference"
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "filterDates",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "getFiles",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('getFiles').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@and(\n    greaterOrEquals(\n        split(split(item().name,'.')[0], '_')[2], \n        replace(pipeline().parameters.startDate, '-', '')\n    ),\n    lessOrEquals(\n        split(split(item().name,'.')[0], '_')[2],\n        replace(pipeline().parameters.endDate, '-', '')\n    )\n)",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"folder": {
+				"type": "string",
+				"defaultValue": "Person/DateWise"
+			},
+			"startDate": {
+				"type": "string",
+				"defaultValue": "2026-01-02"
+			},
+			"endDate": {
+				"type": "string",
+				"defaultValue": "2026-01-04"
+			}
+		},
+		"folder": {
+			"name": "AdventureWorks"
+		},
+		"annotations": []
+	}
+}
