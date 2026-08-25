@@ -1,0 +1,26 @@
+{
+	"name": "scheduledTrigger",
+	"properties": {
+		"description": "Scheduling a trigger every 15mins",
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "LoadAdventureWorksCommawithTrigger",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Hour",
+				"interval": 1,
+				"startTime": "2026-08-25T06:18:00",
+				"endTime": "2026-08-25T16:18:00",
+				"timeZone": "India Standard Time"
+			}
+		}
+	}
+}
