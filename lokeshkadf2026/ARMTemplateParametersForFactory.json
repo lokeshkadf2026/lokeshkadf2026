@@ -8,6 +8,9 @@
 		"AdvWorksDb_password": {
 			"value": ""
 		},
+		"lnk_onpremsql_password": {
+			"value": ""
+		},
 		"ls_database_password": {
 			"value": ""
 		},
@@ -21,6 +24,15 @@
 			"value": "lokeshkanchi-db"
 		},
 		"AdvWorksDb_properties_typeProperties_userName": {
+			"value": "lokeshadmin"
+		},
+		"lnk_onpremsql_properties_typeProperties_server": {
+			"value": "DESKTOP-678D62G\\SQLEXPRESS"
+		},
+		"lnk_onpremsql_properties_typeProperties_database": {
+			"value": "AdventureWorksDW2025"
+		},
+		"lnk_onpremsql_properties_typeProperties_userName": {
 			"value": "lokeshadmin"
 		},
 		"ls_database_properties_typeProperties_server": {
