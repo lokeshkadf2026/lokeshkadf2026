@@ -3,7 +3,7 @@
 	"properties": {
 		"description": "Scheduling a trigger every 15mins",
 		"annotations": [],
-		"runtimeState": "Started",
+		"runtimeState": "Stopped",
 		"pipelines": [
 			{
 				"pipelineReference": {
