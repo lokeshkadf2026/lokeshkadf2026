@@ -6,7 +6,14 @@
 			{
 				"name": "getFiles",
 				"type": "GetMetadata",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "validateControlFile",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -45,7 +52,7 @@
 				"type": "ForEach",
 				"dependsOn": [
 					{
-						"activity": "getFiles",
+						"activity": "filterfiles",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -54,7 +61,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"items": {
-						"value": "@activity('getFiles').output.childItems",
+						"value": "@activity('filterfiles').output.Value",
 						"type": "Expression"
 					},
 					"activities": [
@@ -128,6 +135,52 @@
 							]
 						}
 					]
+				}
+			},
+			{
+				"name": "validateControlFile",
+				"description": "Verify if the control file exists and then proceed.",
+				"type": "Validation",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_automated_date",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderpath": {
+								"value": "@formatDateTime(utcNow(), 'yyyy-MM-dd')",
+								"type": "Expression"
+							},
+							"filename": "success.ctl"
+						}
+					},
+					"timeout": "0.12:00:00",
+					"sleep": 60
+				}
+			},
+			{
+				"name": "filterfiles",
+				"description": "exclude controlfile.",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "getFiles",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('getFiles').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@not(equals(item().name, 'success.ctl'))",
+						"type": "Expression"
+					}
 				}
 			}
 		],
