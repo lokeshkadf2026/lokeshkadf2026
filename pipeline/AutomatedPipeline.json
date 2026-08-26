@@ -152,7 +152,10 @@
 								"value": "@formatDateTime(utcNow(), 'yyyy-MM-dd')",
 								"type": "Expression"
 							},
-							"filename": "success.ctl"
+							"filename": {
+								"value": "@pipeline().parameters.controlFile",
+								"type": "Expression"
+							}
 						}
 					},
 					"timeout": "0.12:00:00",
@@ -184,6 +187,12 @@
 				}
 			}
 		],
+		"parameters": {
+			"controlFile": {
+				"type": "string",
+				"defaultValue": "success.ctl"
+			}
+		},
 		"folder": {
 			"name": "AdventureWorks"
 		},
