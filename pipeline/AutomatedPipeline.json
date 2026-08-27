@@ -24,7 +24,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataset": {
-						"referenceName": "ds_automated_date",
+						"referenceName": "ds_automated_date_csv",
 						"type": "DatasetReference",
 						"parameters": {
 							"folderpath": {
@@ -106,7 +106,7 @@
 							},
 							"inputs": [
 								{
-									"referenceName": "ds_automated_date",
+									"referenceName": "ds_automated_date_csv",
 									"type": "DatasetReference",
 									"parameters": {
 										"folderpath": {
@@ -145,7 +145,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataset": {
-						"referenceName": "ds_automated_date",
+						"referenceName": "ds_automated_date_csv",
 						"type": "DatasetReference",
 						"parameters": {
 							"folderpath": {
