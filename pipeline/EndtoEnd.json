@@ -1,0 +1,391 @@
+{
+	"name": "EndtoEnd",
+	"properties": {
+		"description": "Load data into database and reconcile the data.\nSummary.csv contains summary of files.\nSuccesss.ctl validates if all the files are loaded into the container.\n",
+		"activities": [
+			{
+				"name": "validateControlFile",
+				"description": "Verify if the control file exists and then load the files..",
+				"type": "Validation",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_automated_date_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderpath": {
+								"value": "@formatDateTime(utcNow(), 'yyyy-MM-dd')",
+								"type": "Expression"
+							},
+							"filename": {
+								"value": "@pipeline().parameters.controlFile",
+								"type": "Expression"
+							}
+						}
+					},
+					"timeout": "0.12:00:00",
+					"sleep": 60
+				}
+			},
+			{
+				"name": "getFiles",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "validateControlFile",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_automated_date_pipe",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderpath": {
+								"value": "@formatDateTime(utcNow(), 'yyyy-MM-dd')",
+								"type": "Expression"
+							},
+							"filename": "@string('')"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "filterfiles",
+				"description": "Filter the files to exclude control file.",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "getFiles",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('getFiles').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@and(\n  not(endsWith(item().name, '.ctl')),\n  not(equals(item().name, 'summary_report.csv'))\n)\n",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "filterfiles",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('filterfiles').output.Value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "loadData",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": true
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_automated_date_pipe",
+									"type": "DatasetReference",
+									"parameters": {
+										"folderpath": "@formatDateTime(utcNow(), 'yyyy-MM-dd')",
+										"filename": "@string('')"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "adventureWorksDatabase",
+									"type": "DatasetReference",
+									"parameters": {
+										"table": {
+											"value": "@split(split(item().name, '_')[1], '.')[0]",
+											"type": "Expression"
+										},
+										"schema": "@split(item().name, '_')[0]"
+									}
+								}
+							]
+						},
+						{
+							"name": "insertAuditData",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "loadData",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT '@{pipeline().DataFactory}' as DataFactory_Name,\n'@{pipeline().Pipeline}' as Pipeline_Name,\n'@{pipeline().RunId}' as RunId,\n'@{concat('source',item().name)}' as Source,\n'@{split(split(item().name, '.')[0], '_')[1]}' as Destination,\n'@{pipeline().TriggerType}' as TriggerType,\n'@{pipeline().TriggerId}' as TriggerId,\n'@{pipeline().TriggerName}' as TriggerName,\n'@{pipeline().TriggerTime}' as TriggerTime,\n'@{activity('loadData').output.rowsCopied}' as rowsCopied,\n'@{activity('loadData').output.rowsRead}' as RowsRead,\n'@{activity('loadData').output.usedParallelCopies}' as No_ParallelCopies,\n'@{activity('loadData').output.copyDuration}' as copyDuration_in_secs,\n'@{activity('loadData').output.effectiveIntegrationRuntime}' as effectiveIntegrationRuntime,\n'@{activity('loadData').output.executionDetails[0].source.type}' as Source_Type,\n'@{activity('loadData').output.executionDetails[0].sink.type}' as Sink_Type,\n'@{activity('loadData').output.executionDetails[0].status}' as Execution_Status,\n'@{activity('loadData').output.executionDetails[0].start}' as CopyActivity_Start_Time,\n'@{utcNow()}' as CopyActivity_End_Time,\n'@{activity('loadData').output.executionDetails[0].detailedDurations.queuingDuration}' as CopyActivity_queuingDuration_in_secs,\n'@{activity('loadData').output.executionDetails[0].detailedDurations.transferDuration}' as CopyActivity_transferDuration_in_secs\n",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"writeBehavior": "insert",
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "adventureWorksDatabase",
+									"type": "DatasetReference",
+									"parameters": {
+										"table": "pipeline_log",
+										"schema": "dbo"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_SQLDB_PIPELINE_LOG",
+									"type": "DatasetReference"
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "loadSummary",
+				"description": "Load Summary report.",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "ForEach1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"additionalColumns": [
+							{
+								"name": "runid",
+								"value": {
+									"value": "@pipeline().RunId",
+									"type": "Expression"
+								}
+							},
+							{
+								"name": "loggedtime",
+								"value": {
+									"value": "@formatDateTime(utcNow(), 'yyyy-MM-dd HH:mm:ss')",
+									"type": "Expression"
+								}
+							}
+						],
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "runid",
+									"type": "String"
+								},
+								"sink": {
+									"name": "RunId",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "fileName",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "FileName",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "ExpectedCount",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "ExpectedCount",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "loggedtime",
+									"type": "String"
+								},
+								"sink": {
+									"name": "LoggedTime",
+									"type": "DateTime",
+									"physicalType": "datetime"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_automated_date_pipe",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderpath": {
+								"value": "@formatDateTime(utcNow(), 'yyyy-MM-dd')",
+								"type": "Expression"
+							},
+							"filename": "summary_report.csv"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "adventureWorksDatabase",
+						"type": "DatasetReference",
+						"parameters": {
+							"table": "summary_report",
+							"schema": "dbo"
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"controlFIle": {
+				"type": "string",
+				"defaultValue": "success.ctl"
+			}
+		},
+		"folder": {
+			"name": "AdventureWorks"
+		},
+		"annotations": []
+	}
+}
