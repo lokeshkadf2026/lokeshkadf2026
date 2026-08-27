@@ -1,7 +1,7 @@
 {
 	"name": "EndtoEnd",
 	"properties": {
-		"description": "Load data into database and reconcile the data.\nSummary.csv contains summary of files.\nSuccesss.ctl validates if all the files are loaded into the container.\n",
+		"description": "Load data into database and reconcile the data.\nSummary.csv contains summary of files.\nSuccesss.ctl validates if all the files are loaded into the container.\nSource File names are of the format: Schema_Table_002.csv\nSource has a summary file: summary_report.csv\nControl file: success.ctl",
 		"activities": [
 			{
 				"name": "validateControlFile",
@@ -159,7 +159,10 @@
 									"type": "DatasetReference",
 									"parameters": {
 										"folderpath": "@formatDateTime(utcNow(), 'yyyy-MM-dd')",
-										"filename": "@string('')"
+										"filename": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
 									}
 								}
 							],
@@ -169,7 +172,7 @@
 									"type": "DatasetReference",
 									"parameters": {
 										"table": {
-											"value": "@split(split(item().name, '_')[1], '.')[0]",
+											"value": "@split(item().name, '_')[1]",
 											"type": "Expression"
 										},
 										"schema": "@split(item().name, '_')[0]"
