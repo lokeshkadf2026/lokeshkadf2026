@@ -1,0 +1,16 @@
+{
+	"name": "ds_DimCustomer_SCD1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AdvWorksDb",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "DimCustomer_SCD1"
+		}
+	}
+}

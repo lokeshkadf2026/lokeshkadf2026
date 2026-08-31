@@ -1,0 +1,123 @@
+{
+	"name": "df_Process_SCD1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_Customer_CSV",
+						"type": "DatasetReference"
+					},
+					"name": "srcCustomer",
+					"description": "Adding source dataset"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_DimCustomer_SCD1",
+						"type": "DatasetReference"
+					},
+					"name": "DimCustomerSCD1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_DimCustomer_SCD1",
+						"type": "DatasetReference"
+					},
+					"name": "sinknewrows"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_DimCustomer_SCD1",
+						"type": "DatasetReference"
+					},
+					"name": "sinkupdatedrows"
+				}
+			],
+			"transformations": [
+				{
+					"name": "AddSrcHash",
+					"description": "Creating SHA-2 Hash column"
+				},
+				{
+					"name": "AddTgtHash"
+				},
+				{
+					"name": "LookupTarget"
+				},
+				{
+					"name": "SplitSCD1",
+					"description": "Add cases to distribute the data in multiple groups i.e. NewRows or Changed Rows."
+				},
+				{
+					"name": "AlterInsert"
+				},
+				{
+					"name": "AlterUpdate"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          CustomerID as integer,",
+				"          FirstName as string,",
+				"          LastName as string,",
+				"          Phone as string,",
+				"          Email as string,",
+				"          Address as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> srcCustomer",
+				"source(output(",
+				"          CustomerKey as integer,",
+				"          CustomerID as integer,",
+				"          FirstName as string,",
+				"          LastName as string,",
+				"          Phone as string,",
+				"          Email as string,",
+				"          Address as string,",
+				"          UpdatedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> DimCustomerSCD1",
+				"srcCustomer derive(SrcHash = sha2(256, coalesce(FirstName,'') + coalesce(LastName,'') + coalesce(Phone,'') + coalesce(Email,'') + coalesce(Address,''))) ~> AddSrcHash",
+				"DimCustomerSCD1 derive(TgtHash = sha2(256, coalesce(FirstName,'') + coalesce(LastName,'') + coalesce(Phone,'') + coalesce(Email,'') + coalesce(Address,''))) ~> AddTgtHash",
+				"AddSrcHash, AddTgtHash lookup(srcCustomer@CustomerID == DimCustomerSCD1@CustomerID,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> LookupTarget",
+				"LookupTarget split(isNull(DimCustomerSCD1@CustomerID),",
+				"     !isNull(DimCustomerSCD1@CustomerID) && SrcHash != TgtHash,",
+				"     disjoint: false) ~> SplitSCD1@(NewRows, ChangedRows)",
+				"SplitSCD1@NewRows alterRow(insertIf(true())) ~> AlterInsert",
+				"SplitSCD1@ChangedRows alterRow(updateIf(true())) ~> AlterUpdate",
+				"AlterInsert sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['CustomerID'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sinknewrows",
+				"AlterUpdate sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['CustomerID'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sinkupdatedrows"
+			]
+		}
+	}
+}
