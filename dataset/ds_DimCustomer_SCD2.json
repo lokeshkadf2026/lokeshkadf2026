@@ -1,0 +1,61 @@
+{
+	"name": "ds_DimCustomer_SCD2",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AdvWorksDb",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "CustomerSK",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "CustomerID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "FirstName",
+				"type": "varchar"
+			},
+			{
+				"name": "LastName",
+				"type": "varchar"
+			},
+			{
+				"name": "Phone",
+				"type": "varchar"
+			},
+			{
+				"name": "Email",
+				"type": "varchar"
+			},
+			{
+				"name": "Address",
+				"type": "varchar"
+			},
+			{
+				"name": "StartDate",
+				"type": "datetime2",
+				"scale": 7
+			},
+			{
+				"name": "EndDate",
+				"type": "datetime2",
+				"scale": 7
+			},
+			{
+				"name": "IsActive",
+				"type": "bit"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "DimCustomer_SCD2"
+		}
+	}
+}
