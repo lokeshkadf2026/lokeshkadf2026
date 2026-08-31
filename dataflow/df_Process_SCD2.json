@@ -167,7 +167,8 @@
 				"     errorHandlingOption: 'stopOnFirstError',",
 				"     mapColumn(",
 				"          StartDate,",
-				"          EndDate",
+				"          EndDate,",
+				"          IsActive",
 				"     )) ~> SinkInsertNewVersions",
 				"SetRowToUpdate sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
@@ -191,7 +192,18 @@
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError') ~> SinkExpireOldVersions"
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          CustomerSK,",
+				"          CustomerID,",
+				"          FirstName,",
+				"          LastName,",
+				"          Phone,",
+				"          Email,",
+				"          Address,",
+				"          EndDate,",
+				"          IsActive",
+				"     )) ~> SinkExpireOldVersions"
 			]
 		}
 	}
