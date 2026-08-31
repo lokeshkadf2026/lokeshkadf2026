@@ -38,7 +38,8 @@
 		],
 		"parameters": {
 			"fileName": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "customers_day1.csv"
 			}
 		},
 		"folder": {
