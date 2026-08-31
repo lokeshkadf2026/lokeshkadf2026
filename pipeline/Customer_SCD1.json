@@ -20,7 +20,10 @@
 						"type": "DataFlowReference",
 						"datasetParameters": {
 							"srcCustomer": {
-								"filename": "customers_day1.csv"
+								"filename": {
+									"value": "@pipeline().parameters.filename",
+									"type": "Expression"
+								}
 							}
 						}
 					},
@@ -32,6 +35,11 @@
 				}
 			}
 		],
+		"parameters": {
+			"filename": {
+				"type": "string"
+			}
+		},
 		"folder": {
 			"name": "SCD"
 		},
