@@ -56,6 +56,14 @@
 				},
 				{
 					"name": "AlterUpdate"
+				},
+				{
+					"name": "DeriveInsertDate",
+					"description": "Enter Date inserted."
+				},
+				{
+					"name": "DeriveUpdateDate",
+					"description": "Updated date for the existing rows."
 				}
 			],
 			"scriptLines": [
@@ -93,8 +101,10 @@
 				"LookupTarget split(isNull(DimCustomerSCD1@CustomerID),",
 				"     !isNull(DimCustomerSCD1@CustomerID) && SrcHash != TgtHash,",
 				"     disjoint: false) ~> SplitSCD1@(NewRows, ChangedRows)",
-				"SplitSCD1@NewRows alterRow(insertIf(true())) ~> AlterInsert",
-				"SplitSCD1@ChangedRows alterRow(updateIf(true())) ~> AlterUpdate",
+				"DeriveInsertDate alterRow(insertIf(true())) ~> AlterInsert",
+				"DeriveUpdateDate alterRow(updateIf(true())) ~> AlterUpdate",
+				"SplitSCD1@NewRows derive(UpdatedDate = currentUTC()) ~> DeriveInsertDate",
+				"SplitSCD1@ChangedRows derive(UpdatedDate = currentUTC()) ~> DeriveUpdateDate",
 				"AlterInsert sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     deletable:false,",
@@ -105,7 +115,24 @@
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError') ~> sinknewrows",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          CustomerID = SplitSCD1@NewRows@CustomerID,",
+				"          FirstName = SplitSCD1@NewRows@FirstName,",
+				"          LastName = SplitSCD1@NewRows@LastName,",
+				"          Phone = SplitSCD1@NewRows@Phone,",
+				"          Email = SplitSCD1@NewRows@Email,",
+				"          Address = SplitSCD1@NewRows@Address,",
+				"          SrcHash,",
+				"          CustomerID = SplitSCD1@NewRows@CustomerID,",
+				"          FirstName = SplitSCD1@NewRows@FirstName,",
+				"          LastName = SplitSCD1@NewRows@LastName,",
+				"          Phone = SplitSCD1@NewRows@Phone,",
+				"          Email = SplitSCD1@NewRows@Email,",
+				"          Address = SplitSCD1@NewRows@Address,",
+				"          UpdatedDate,",
+				"          TgtHash",
+				"     )) ~> sinknewrows",
 				"AlterUpdate sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     deletable:false,",
