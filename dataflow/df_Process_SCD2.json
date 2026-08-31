@@ -1,0 +1,87 @@
+{
+	"name": "df_Process_SCD2",
+	"properties": {
+		"description": "SCD Type 2 handles updates by retiring old active records.",
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_Customer_CSV",
+						"type": "DatasetReference"
+					},
+					"name": "SrcCustomer"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_DimCustomer_SCD2",
+						"type": "DatasetReference"
+					},
+					"name": "DimCustomerSCD2"
+				}
+			],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "AddSrcHash",
+					"description": "Creating Source Hash"
+				},
+				{
+					"name": "AddTargetHash",
+					"description": "Creating Target Hash"
+				},
+				{
+					"name": "LookupActiveTarget"
+				},
+				{
+					"name": "SplitSCD2",
+					"description": "Add cases to distribute the data in multiple groups i.e. New rows, Changed rows."
+				},
+				{
+					"name": "UnionNewVersions",
+					"description": "Combine new and changed streams."
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          CustomerID as integer,",
+				"          FirstName as string,",
+				"          LastName as string,",
+				"          Phone as string,",
+				"          Email as string,",
+				"          Address as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> SrcCustomer",
+				"source(output(",
+				"          CustomerSK as integer,",
+				"          CustomerID as integer,",
+				"          FirstName as string,",
+				"          LastName as string,",
+				"          Phone as string,",
+				"          Email as string,",
+				"          Address as string,",
+				"          StartDate as timestamp,",
+				"          EndDate as timestamp,",
+				"          IsActive as boolean",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'SELECT * FROM dbo.DimCustomer_SCD2 WHERE IsActive = 1',",
+				"     format: 'query') ~> DimCustomerSCD2",
+				"SrcCustomer derive(SrcHash = sha2(256, coalesce(FirstName,'') + coalesce(LastName,'') + coalesce(Phone,'') + coalesce(Email,'') + coalesce(Address,''))) ~> AddSrcHash",
+				"DimCustomerSCD2 derive(TgtHash = sha2(256, coalesce(FirstName,'') + coalesce(LastName,'') + coalesce(Phone,'') + coalesce(Email,'') + coalesce(Address,''))) ~> AddTargetHash",
+				"AddSrcHash, AddTargetHash lookup(SrcCustomer@CustomerID == DimCustomerSCD2@CustomerID,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> LookupActiveTarget",
+				"LookupActiveTarget split(isNull(DimCustomerSCD2@CustomerID),",
+				"     !isNull(DimCustomerSCD2@CustomerID) && SrcHash != TgtHash,",
+				"     disjoint: false) ~> SplitSCD2@(IsNew, IsChanged)",
+				"SplitSCD2@IsNew union(byName: true)~> UnionNewVersions"
+			]
+		}
+	}
+}
