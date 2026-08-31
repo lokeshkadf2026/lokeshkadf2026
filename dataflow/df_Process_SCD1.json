@@ -116,7 +116,24 @@
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError') ~> sinkupdatedrows"
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          CustomerID = SplitSCD1@ChangedRows@CustomerID,",
+				"          FirstName = SplitSCD1@ChangedRows@FirstName,",
+				"          LastName = SplitSCD1@ChangedRows@LastName,",
+				"          Phone = SplitSCD1@ChangedRows@Phone,",
+				"          Email = SplitSCD1@ChangedRows@Email,",
+				"          Address = SplitSCD1@ChangedRows@Address,",
+				"          SrcHash,",
+				"          CustomerID = SplitSCD1@ChangedRows@CustomerID,",
+				"          FirstName = SplitSCD1@ChangedRows@FirstName,",
+				"          LastName = SplitSCD1@ChangedRows@LastName,",
+				"          Phone = SplitSCD1@ChangedRows@Phone,",
+				"          Email = SplitSCD1@ChangedRows@Email,",
+				"          Address = SplitSCD1@ChangedRows@Address,",
+				"          UpdatedDate,",
+				"          TgtHash",
+				"     )) ~> sinkupdatedrows"
 			]
 		}
 	}
