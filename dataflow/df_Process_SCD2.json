@@ -20,7 +20,23 @@
 					"name": "DimCustomerSCD2"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_DimCustomer_SCD2",
+						"type": "DatasetReference"
+					},
+					"name": "SinkInsertNewVersions"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_DimCustomer_SCD2",
+						"type": "DatasetReference"
+					},
+					"name": "SinkExpireOldVersions",
+					"description": "Expiring old versions"
+				}
+			],
 			"transformations": [
 				{
 					"name": "AddSrcHash",
@@ -40,6 +56,24 @@
 				{
 					"name": "UnionNewVersions",
 					"description": "Combine new and changed streams."
+				},
+				{
+					"name": "DeriveActiveMetadata",
+					"description": "Creating/updating the columns startdate, enddate, isactive"
+				},
+				{
+					"name": "DeriveExpiredMetadata"
+				},
+				{
+					"name": "SetRowToUpdate",
+					"description": "Add expressions to update rows."
+				},
+				{
+					"name": "SelectSrcOnlyNew"
+				},
+				{
+					"name": "SelectSrcOnlyChanged",
+					"description": "Only changed columns."
 				}
 			],
 			"scriptLines": [
@@ -80,7 +114,84 @@
 				"LookupActiveTarget split(isNull(DimCustomerSCD2@CustomerID),",
 				"     !isNull(DimCustomerSCD2@CustomerID) && SrcHash != TgtHash,",
 				"     disjoint: false) ~> SplitSCD2@(IsNew, IsChanged)",
-				"SplitSCD2@IsNew union(byName: true)~> UnionNewVersions"
+				"SelectSrcOnlyNew, SelectSrcOnlyChanged union(byName: true)~> UnionNewVersions",
+				"UnionNewVersions derive(StartDate = currentUTC(),",
+				"          EndDate = toTimestamp(null()),",
+				"          IsActive = toByte(1)) ~> DeriveActiveMetadata",
+				"SelectSrcOnlyChanged derive(EndDate = currentUTC(),",
+				"          IsActive = toByte(0)) ~> DeriveExpiredMetadata",
+				"DeriveExpiredMetadata alterRow(updateIf(true())) ~> SetRowToUpdate",
+				"SplitSCD2@IsNew select(mapColumn(",
+				"          CustomerID = SplitSCD2@IsNew@CustomerID,",
+				"          FirstName = SplitSCD2@IsNew@FirstName,",
+				"          LastName = SplitSCD2@IsNew@LastName,",
+				"          Phone = SplitSCD2@IsNew@Phone,",
+				"          Email = SplitSCD2@IsNew@Email,",
+				"          Address = SplitSCD2@IsNew@Address,",
+				"          SrcHash",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SelectSrcOnlyNew",
+				"SplitSCD2@IsChanged select(mapColumn(",
+				"          CustomerID = SplitSCD2@IsChanged@CustomerID,",
+				"          FirstName = SplitSCD2@IsChanged@FirstName,",
+				"          LastName = SplitSCD2@IsChanged@LastName,",
+				"          Phone = SplitSCD2@IsChanged@Phone,",
+				"          Email = SplitSCD2@IsChanged@Email,",
+				"          Address = SplitSCD2@IsChanged@Address,",
+				"          CustomerSK",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SelectSrcOnlyChanged",
+				"DeriveActiveMetadata sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          CustomerSK as integer,",
+				"          CustomerID as integer,",
+				"          FirstName as string,",
+				"          LastName as string,",
+				"          Phone as string,",
+				"          Email as string,",
+				"          Address as string,",
+				"          StartDate as timestamp,",
+				"          EndDate as timestamp,",
+				"          IsActive as boolean",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          StartDate,",
+				"          EndDate",
+				"     )) ~> SinkInsertNewVersions",
+				"SetRowToUpdate sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          CustomerSK as integer,",
+				"          CustomerID as integer,",
+				"          FirstName as string,",
+				"          LastName as string,",
+				"          Phone as string,",
+				"          Email as string,",
+				"          Address as string,",
+				"          StartDate as timestamp,",
+				"          EndDate as timestamp,",
+				"          IsActive as boolean",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:false,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['CustomerSK'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> SinkExpireOldVersions"
 			]
 		}
 	}
